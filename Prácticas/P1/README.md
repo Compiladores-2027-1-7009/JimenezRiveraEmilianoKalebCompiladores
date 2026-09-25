@@ -120,6 +120,7 @@ e. Ejecutar mediante: ```./nombreEjecutable```
     Para probarlo cambié en _archivo.ll_ la macro `palabra {letra}+` por `palabra letra+`. El programa compila sin errores, pero la macro cambia de significado: Flex ya no interpreta `letra` como una macro sino como los caracteres literales `l`, `e`, `t`, `r`, `a`, y el `+` solo afecta a la última `a`. Es decir, `palabra` ahora solo reconoce cadenas como `letra`, `letraa`, `letraaa`, etc.
 
     En la imagen se ve este comportamiento (cada línea que escribí aparece seguida de lo que imprimió el programa): al escribir `letra` sí se reporta `Encontré una palabra: letra`, y al escribir `letraletra` se reportan dos palabras `letra`, porque la cadena literal aparece dos veces seguidas. En cambio, al escribir `abc` ya no aparece ningún mensaje, solo se vuelve a imprimir `abc` tal cual: como ya no coincide con ninguna regla, Flex aplica su regla por defecto, que copia el texto a la salida (lo mismo que se explica en la pregunta 6).
+    Este comportamiento fue posible solo cuando en vez de {letra}+ puse tal cual letra, entonces lo único que capturaba era "letra"
 
     <img src="img/ejercicio1.png" width="600" alt="Ejercicio 1">
 
@@ -127,7 +128,7 @@ e. Ejecutar mediante: ```./nombreEjecutable```
 
     Regresé la macro `palabra` a `{letra}+` y ahora quité las llaves en las reglas, dejándolas como `espacio`, `digito+` y `palabra`. Pasa algo parecido al inciso anterior: dejan de ser referencias a las macros y se convierten en cadenas literales, por lo que el escáner solo reconoce las palabras `espacio`, `digito` (y `digitoo`, `digitooo`, ..., pues el `+` aplica solo a la `o`) y `palabra`.
 
-    En la imagen se ve que `letra` y `letra+` ya no se reconocen y solo se vuelven a imprimir tal cual; `digito` se reporta como `Encontré un número: digito` aunque no tiene ningún dígito, porque ahora la regla de números es la cadena literal, y `palabra` se reporta como palabra por la misma razón. Al escribir `espacio` no se imprime nada, porque coincide con la regla que ignora los espacios. También aparecen líneas en blanco después de cada mensaje: como la regla `espacio` ya no reconoce el salto de línea, este también se imprime por la regla por defecto. Esto demuestra que las llaves son las que le indican a Flex que debe expandir la macro.
+    En la imagen se ve que `letra` y `letra+` ya no se reconocen y solo se vuelven a imprimir tal cual; `digito` se reporta como `Encontré un número: digito` aunque no tiene ningún dígito, porque ahora la regla de números es la cadena literal, y `palabra` se reporta como palabra por la misma razón.
 
     <img src="img/ejercicio2.png" width="600" alt="Ejercicio 2">
 
@@ -140,23 +141,23 @@ e. Ejecutar mediante: ```./nombreEjecutable```
     Para corregirlo (segunda imagen) moví el comentario a la **sección de declaraciones**, justo antes del `%%`, y dejé la regla como `{digito}+`. Así compila sin errores y Flex copia el comentario tal cual a _lex.yy.cc_. En resumen:
     * En la sección de declaraciones el comentario se puede escribir desde la columna 0.
     * En la sección de reglas debe ir con sangría (al menos un espacio o tabulador); en la columna 0 produce `unrecognized rule`.
-    * Dentro de las acciones léxicas, de los bloques `%{ ... %}` y en la sección de código de usuario se pueden usar comentarios normales de C++ (`//` y `/* */`), ya que ese código se copia sin modificar a _lex.yy.cc_. Un ejemplo es el comentario dentro de la acción de `{espacio}`, que se ve en ambas imágenes.
+    * Dentro de las acciones léxicas, de los bloques `%{ ... %}` y en la sección de código de usuario se pueden usar comentarios normales de C++ (`//` y `/* */`), ya que ese código se copia sin modificar a _lex.yy.cc_. Un ejemplo es el comentario dentro de la acción de `{espacio}`.
 
     <img src="img/ejercicio3%20correccion%20de%20error.png" width="600" alt="Ejercicio 3, corrección">
 
 4. ¿Qué se guarda en yytext? (0.5 pts)
 
-    `yytext` es un apuntador a cadena (`char*`) que contiene el **lexema**, es decir, el texto exacto de la entrada que coincidió con la expresión regular de la regla que se está ejecutando; su longitud se guarda en `yyleng`. No lo declaramos nosotros: en modo C++ es un atributo de la clase `FlexLexer` (declarado en _FlexLexer.h_), y en _lex.yy.cc_ se asigna en la macro `YY_DO_BEFORE_ACTION`, justo antes de ejecutar la acción, haciendo que apunte al inicio del lexema dentro del buffer de entrada y colocando un `'\0'` temporal al final. Por eso su valor cambia con cada token y, si se quiere conservar, hay que copiarlo (p. ej. `std::string s(yytext);`). En las imágenes de las preguntas 1, 2, 5 y 7 se puede ver su contenido: es el texto que aparece después de cada mensaje `Encontré ...:`, ya que las acciones imprimen `yytext`.
+    `yytext` es un apuntador a cadena (`char*`) que contiene el **lexema**, es decir, el texto exacto de la entrada que coincidió con la expresión regular de la regla que se está ejecutando; su longitud se guarda en `yyleng`. No lo declaramos nosotros: en modo C++ es un atributo de la clase `FlexLexer` (declarado en _FlexLexer.h_). Su valor cambia con cada token y, si se quiere conservar, hay que copiarlo (p. ej. `std::string s(yytext);`). En las imágenes de las preguntas 1, 2, 5 y 7 se puede ver su contenido: es el texto que aparece después de cada mensaje `Encontré ...:`, ya que las acciones imprimen `yytext`.
 
 5. ¿Qué pasa al ejecutar el programa e introducir cadenas de caracteres y de dígitos por la consola? (0.5 pts)
 
-    Aquí usé el _archivo.ll_ original, sin modificaciones. El programa se queda leyendo de la entrada estándar y, cada vez que se presiona Enter, analiza la línea: por cada secuencia de letras imprime `Encontré una palabra: ...` y por cada secuencia de dígitos `Encontré un número: ...`, mientras que los espacios y saltos de línea se ignoran. En la imagen, al escribir `hola9` el escáner lo dividió en dos tokens, la palabra `hola` y el número `9`, porque `letra` no incluye dígitos y Flex toma la coincidencia más larga posible para cada regla. Con `holaaa mi nombre es 9832882` reconoció cuatro palabras y un número, sin reportar los espacios que las separan. El programa termina hasta recibir fin de archivo (Ctrl+D) o interrumpirlo con Ctrl+C.
+    Aquí usé el _archivo.ll_ original, sin modificaciones. El programa se queda leyendo de la entrada estándar y, cada vez que se presiona Enter, analiza la línea: por cada secuencia de letras imprime `Encontré una palabra: ...` y por cada secuencia de dígitos `Encontré un número: ...`, mientras que los espacios y saltos de línea se ignoran. En la imagen, al escribir `hola9` el escáner lo dividió en dos tokens, la palabra `hola` y el número `9`, porque `letra` no incluye dígitos y Flex toma la coincidencia más larga posible para cada regla. Con `holaaa mi nombre es 9832882` reconoció cuatro palabras y un número, sin reportar los espacios que las separan.
 
     <img src="img/ejercicio5.png" width="600" alt="Ejercicio 5">
 
 6. ¿Qué ocurre si introducimos caracteres como "\*" en la consola? (0.5 pts)
 
-    También con el _archivo.ll_ original, escribí `*` y después `.`. Como ninguno coincide con las reglas, Flex aplica su **regla por defecto**, que copia el carácter a la salida sin modificarlo (la acción `ECHO`, definida en _lex.yy.cc_ como `LexerOutput(yytext, yyleng)`). Por eso en la imagen cada carácter aparece dos veces: la primera es lo que escribí y la segunda es lo que imprimió el programa, sin ningún mensaje de `Encontré ...`. No se produce ningún error, lo cual muestra que un analizador léxico real debería incluir una regla (p. ej. `.`) para reportar los caracteres no válidos, como se hace en _lexer.ll_ de C_1.
+    También con el _archivo.ll_ original, escribí `*` y después `.`. Como ninguno coincide con las reglas, Flex aplica su **regla por defecto**, que copia el carácter a la salida sin modificarlo (la acción `ECHO`, definida en _lex.yy.cc_ como `LexerOutput(yytext, yyleng), algo que noté al estudair su contenido`). Por eso en la imagen cada carácter aparece dos veces: la primera es lo que escribí y la segunda es lo que imprimió el programa, sin ningún mensaje de `Encontré ...`. No se produce ningún error, lo cual muestra que un analizador léxico real debería incluir una regla (p. ej. `.`) para reportar los caracteres no válidos, como se hace en _lexer.ll_ de C_1.
 
     <img src="img/ejercicio6.png" width="600" alt="Ejercicio 6">
 
@@ -177,13 +178,12 @@ e. Ejecutar mediante: ```./nombreEjecutable```
     ```
 
     * `hex` reconoce un `0x` o `0X` seguido de uno o más dígitos hexadecimales.
-    * `reservadas` reconoce las palabras `int`, `true`, `class`, `double` y `try`. Al escribirla descubrí que no debe haber espacios alrededor de `|`, porque el espacio termina la expresión regular y Flex marca `unrecognized rule`.
+    * `reservadas` reconoce las palabras `int`, `true`, `class`, `double` y `try`. Al escribirla descubrí que no debe haber espacios alrededor de `|`, porque el espacio termina la expresión regular y Flex marca `unrecognized rule`. Me causó muchos errores antes de que me diera cuenta
     * `ids` reconoce un primer carácter que es letra o guion bajo, seguido de hasta 31 letras, dígitos o guiones bajos, para un máximo de 32 caracteres.
     * `espacio` reconoce espacios, tabuladores y saltos de línea, que se ignoran.
 
     También conservé la regla `{digito}+` de _archivo.ll_ para los números decimales. El orden de las reglas es importante: `{reservadas}` va antes de `{ids}`, porque cuando dos reglas reconocen la misma longitud gana la primera, y así `int` no se reporta como identificador. Al principio había escrito dos reglas `{hex}`, y Flex advirtió `rule cannot be matched` para la segunda, ya que nunca podría ganarle a la primera.
 
-    En la imagen se ve que `int` y `class` se reconocen como palabras reservadas; `_`, `i` y `_x` como identificadores; `93822` como número y `0xabc` como hexadecimal (aquí `{digito}+` solo alcanzaría el `0`, así que gana `{hex}` por ser la coincidencia más larga). El carácter `:` no pertenece a ninguna regla, por lo que solo se vuelve a imprimir tal cual.
 
     <img src="img/ejercicio7.png" width="600" alt="Ejercicio 7">
 
@@ -255,7 +255,7 @@ $ ./compiler prueba
 
 8. Describir el conjunto de terminales y la expresión regular que reconoce a cada uno  en _lexer.ll_. (2 pts)
 
-    En _lexer.ll_ definí los terminales que aparecen en _tokens.hpp_. Para los que tienen una forma variable usé macros en la primera sección, y para los que son una cadena fija escribí la cadena literal directamente en la regla:
+    En _lexer.ll_ definí los terminales que aparecen en _tokens.hpp_. Para los que tienen una forma variable usé macros en la primera sección, y para los que son una cadena fija escribí la cadena literal directamente en la regla, como lo había hecho en los ejercicios anteriores: 
 
     | Terminal | Token | Expresión regular |
     |----------|-------|-------------------|
@@ -270,7 +270,7 @@ $ ./compiler prueba
 
     con las macros auxiliares `DIG [0-9]` y `letra [a-zA-Z]`. La expresión de `numero` acepta una parte entera obligatoria, una parte decimal opcional y un exponente opcional con signo, por lo que reconoce tanto `12345` como `1.2e6`. Los identificadores empiezan con letra o guion bajo, así que `___` y `_b` son válidos, pero un lexema que empieza con dígito no.
 
-    Las palabras reservadas van en reglas separadas (y no en una sola macro) porque cada una debe regresar un token distinto, y van **antes** de `{ids}`: cuando dos reglas reconocen la misma longitud gana la primera, por eso `int` sale como `INT` y no como `ID`. En cambio `if3` o `while4` salen como identificadores porque Flex siempre toma la coincidencia más larga. Como el archivo usa `%option case-insensitive`, las palabras reservadas también se reconocen en mayúsculas (`WHILE`, `IF`). Al final dejé la regla `.` que imprime `ERROR LEXICO` para cualquier carácter que no pertenezca al lenguaje.
+    Las palabras reservadas van en reglas separadas (y no en una sola macro) porque cada una debe regresar un token distinto, y van **antes** de `{ids}` por las mismas razones que se explciaron en los primeros ejercicios: cuando dos reglas reconocen la misma longitud gana la primera, por eso `int` sale como `INT` y no como `ID`. En cambio `if3` o `while4` salen como identificadores porque Flex siempre toma la coincidencia más larga. Al final dejé la regla `.` que imprime `ERROR LEXICO` para cualquier carácter que no pertenezca al lenguaje.
 
 9. Generar acciones léxicas para cada terminal de nuestro lenguaje en _Lexer.cpp_, de modo que se muestre en pantalla la salida esperada con el archivo _prueba_. (2 pts)
 
@@ -280,9 +280,6 @@ $ ./compiler prueba
     "int" { return INT; }
     {numero} { return NUMERO; }
     {ids} { return ID; }
-    ```
-
-    Gracias a `%option yyclass="C_1::Lexer"`, Flex copia estas acciones dentro del método `C_1::Lexer::yylex()` en _Lexer.cpp_, por lo que los nombres de _tokens.hpp_ se pueden usar directamente. En _main.cpp_ el ciclo pide tokens hasta recibir 0 (fin de archivo) e imprime el número de token junto con el lexema usando `YYText()`, que regresa el mismo contenido de `yytext`. Los espacios solo se ignoran, sin `return`, por lo que no aparecen en la salida. En la imagen se ve la ejecución de `./compiler prueba`, que coincide línea por línea con la salida esperada del enunciado (también lo comprobé con `diff`). Ahí se nota el orden de las reglas: `if` y `while` salen como palabras reservadas (11 y 13), pero `if3` y `while4` salen como identificadores (10) porque la coincidencia de `{ids}` es más larga; `12345` y `1.2e6` salen como `NUMERO` (16), y en `)a` el paréntesis y la `a` se separan en dos tokens distintos.
 
     <img src="img/ejercicio9.png" width="600" alt="Ejercicio 9">
 
@@ -294,20 +291,13 @@ $ ./compiler prueba
     * `make run`: compila si hace falta y ejecuta `./compiler prueba`.
     * `make clean`: borra los archivos generados (_Lexer.cpp_ y _compiler_).
 
-    Cada objetivo declara sus dependencias, por lo que `make` solo rehace lo que cambió: si se modifica _lexer.ll_ se vuelve a generar _Lexer.cpp_ y después el ejecutable, pero si todo está al día responde `Nothing to be done`. Un detalle importante es que las líneas de comandos deben empezar con un tabulador y no con espacios; si no, `make` marca el error `missing separator`.
+    Cada objetivo declara sus dependencias, por lo que `make` solo rehace lo que cambió: si se modifica _lexer.ll_ se vuelve a generar _Lexer.cpp_ y después el ejecutable, pero si todo está al día responde `Nothing to be done`. 
 
 ---
 #### Extras
 
 11. Documentar el código. (0.25pts)
 
-    Agregué comentarios a todos los archivos del analizador:
-
-    * _lexer.ll_: un encabezado que explica qué hace el analizador, el propósito de cada `%option` y de las macros `numero` e `ids`, y un comentario por cada grupo de reglas (operadores, puntuación, palabras reservadas y errores). En la sección de reglas los comentarios van con sangría, porque en la columna 0 Flex los tomaría como una expresión regular (pregunta 3).
-    * _Lexer.hpp_: qué hereda la clase `Lexer` de `yyFlexLexer` y qué regresa `yylex()`.
-    * _tokens.hpp_: que las constantes son los códigos de los terminales y que el 0 queda reservado para el fin de archivo.
-    * _main.cpp_: qué hace el programa, cómo se abre el archivo de entrada y la condición de paro del ciclo.
-    * _Makefile_: qué hace cada objetivo.
 
 12. Proponer 4 archivos de prueba nuevos, 2 válidos y 2 inválidos. (0.25pts)
 
