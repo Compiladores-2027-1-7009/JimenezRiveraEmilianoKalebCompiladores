@@ -8,6 +8,7 @@ using namespace std;
 
 namespace C_1
 {    
+    // codigos de los terminales que regresa Lexer::yylex(); el 0 se reserva para fin de archivo
     const int MAS = 1;
     const int MENOS = 2;
     const int MUL = 3;
@@ -25,6 +26,6 @@ namespace C_1
     const int FLOAT = 15;
     const int NUMERO = 16;
     const int ESP = 17;
-} // namespace C_1
+} 
 
 #endif

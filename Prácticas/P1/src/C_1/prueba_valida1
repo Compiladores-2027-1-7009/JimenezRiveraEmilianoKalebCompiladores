@@ -1,0 +1,4 @@
+int x, y;
+float promedio;
+x = 10 + y * 2;
+promedio = (x - y) / 2.5e-3;

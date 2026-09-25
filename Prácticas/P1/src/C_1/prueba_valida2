@@ -1,0 +1,3 @@
+WHILE (contador_1)
+    IF (x) suma = suma + 1; ELSE resta = resta - 1;
+float _temp = 3.1416E2;
