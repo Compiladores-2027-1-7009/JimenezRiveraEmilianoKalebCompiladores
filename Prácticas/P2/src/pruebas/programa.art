@@ -1,0 +1,13 @@
+-- comentario de una linea
+<* comentario
+   multilinea *>
+begin
+  x := 10 + 3.14 * y_2;
+  if x <> 5 then
+    msg := "hola mundo";
+  else
+    z := (a % 2) / 1.5e3;
+  end
+  while not false do { cuenta := cuenta - 1 }
+  w := 4 # 2;
+end

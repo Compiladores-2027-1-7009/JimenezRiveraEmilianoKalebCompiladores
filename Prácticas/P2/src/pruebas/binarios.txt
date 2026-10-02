@@ -1,0 +1,2 @@
+el 0b101 y 0b00101 mas 0b1
+y esto no 0b ni 0x11 pero si 0b11
