@@ -1,0 +1,14 @@
+int a;
+float b, c;
+int _i;
+
+a = 1;
+if (a - 1)
+    b = a * 2;
+else
+    if (b)
+        c = 3.1416;
+    else
+        while (c / 2)
+            c = c - 1;
+            _i = _i + 1;

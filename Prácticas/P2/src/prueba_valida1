@@ -1,0 +1,8 @@
+int x, y, z;
+float promedio;
+
+x = 10;
+y = (x + 2) * 3 - 4 / 2;
+while (x)
+    x = x - 1;
+    promedio = 2.5e-3 * (x + y) / z;

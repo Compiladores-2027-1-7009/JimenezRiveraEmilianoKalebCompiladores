@@ -1,0 +1,6 @@
+int a;
+float b;
+
+a = 5;
+if (a) b = a * (2 + 3;
+else b = 0;
