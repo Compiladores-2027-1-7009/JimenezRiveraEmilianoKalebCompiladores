@@ -3,7 +3,10 @@ CXXDEBUG = -g -Wall
 CXXSTD=-std=c++17
 CXXFLAGS= -Wno-deprecated-register -O0 $(CXXSTD) $(CXXDEBUG)
 
-EXE=comp
+EXE=compiler
+
+# archivos de prueba que agregue (ejercicio 14)
+PRUEBAS = prueba prueba_valida1 prueba_valida2 prueba_invalida1 prueba_invalida2
 
 CPPOBJ = Grammar ParserLL main Production Symbol
 FILES=$(addsuffix .cpp, $(CPPOBJ))
@@ -36,6 +39,15 @@ wc: $(FILES)
 lexer: lexer.ll
 	flex $<
 	$(CXX) $(CXXFLAGS) -c Lexer.cpp -o lexer.o
+
+# ejecuta el analizador con todos los archivos de prueba, uno tras otro
+# (el || true es para que make no marque error cuando una prueba invalida es rechazada)
+.PHONY: pruebas
+pruebas: all
+	@for p in $(PRUEBAS); do \
+		echo "===== $$p ====="; \
+		./$(EXE) $$p || true; \
+	done
 
 .PHONY: clean
 clean: 

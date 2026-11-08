@@ -1,0 +1,10 @@
+int i, suma;
+float media, _total;
+
+i = 0;
+suma = 0;
+_total = (1.5e2 + 3) * 2 / (i - 4);
+while (10 - i)
+    suma = suma + i;
+    i = i + 1;
+    media = suma / i;
